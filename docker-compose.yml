@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+
+  app:
+    build: ./app
+    container_name: clinica_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=clinica_db
+      - DB_USER=clinica_user
+      - DB_PASSWORD=clinica_pass123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - clinica_network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: clinica_postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=clinica_db
+      - POSTGRES_USER=clinica_user
+      - POSTGRES_PASSWORD=clinica_pass123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinica_user -d clinica_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clinica_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: clinica_nginx
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    networks:
+      - clinica_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: clinica_prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - clinica_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: clinica_grafana
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - clinica_network
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  clinica_network:
+    driver: bridge
