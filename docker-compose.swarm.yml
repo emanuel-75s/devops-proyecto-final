@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   app:
     image: emanuelsalama75/clinica-medica-api:latest
@@ -22,7 +21,6 @@ services:
       restart_policy:
         condition: on-failure
         delay: 15s
-
   postgres:
     image: postgres:15-alpine
     environment:
@@ -40,11 +38,14 @@ services:
           - node.hostname == ip-172-31-39-9
       restart_policy:
         condition: on-failure
-
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - /home/ubuntu/devops-proyecto-final/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - clinica_network
     deploy:
@@ -54,10 +55,8 @@ services:
           - node.hostname == ip-172-31-39-9
       restart_policy:
         condition: on-failure
-
 networks:
   clinica_network:
     driver: overlay
-
 volumes:
   postgres_data:
