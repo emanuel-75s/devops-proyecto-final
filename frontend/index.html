@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinica San Rafael — Sistema de Gestion</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #1565C0; --blue-light: #E3F2FD; --blue-mid: #1976D2;
+    --green: #2E7D32; --green-light: #E8F5E9; --red: #C62828;
+    --gray-100: #F5F7FA; --gray-200: #ECEFF1; --gray-400: #90A4AE;
+    --gray-700: #455A64; --gray-900: #263238; --white: #FFFFFF; --border: #CFD8DC;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Source Sans 3',sans-serif; background:var(--gray-100); color:var(--gray-900); font-size:15px; }
+  header { background:var(--blue); color:var(--white); padding:0 32px; height:60px; display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid #0D47A1; }
+  .header-left { display:flex; align-items:center; gap:12px; }
+  .cross { width:28px; height:28px; position:relative; }
+  .cross::before, .cross::after { content:''; position:absolute; background:var(--white); border-radius:2px; }
+  .cross::before { width:10px; height:28px; left:9px; top:0; }
+  .cross::after { width:28px; height:10px; left:0; top:9px; }
+  header h1 { font-family:'Merriweather',serif; font-size:1.15rem; letter-spacing:.3px; }
+  header h1 span { font-family:'Source Sans 3',sans-serif; font-weight:400; font-size:.8rem; opacity:.75; display:block; margin-top:1px; }
+  #api-badge { font-size:.8rem; padding:4px 12px; border-radius:20px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); }
+  nav { background:var(--white); border-bottom:1px solid var(--border); padding:0 32px; display:flex; gap:4px; }
+  nav button { padding:12px 20px; border:none; background:none; cursor:pointer; font-family:inherit; font-size:.9rem; color:var(--gray-700); border-bottom:3px solid transparent; transition:color .2s,border-color .2s; }
+  nav button:hover { color:var(--blue); }
+  nav button.active { color:var(--blue); border-bottom-color:var(--blue); font-weight:600; }
+  .container { max-width:1100px; margin:28px auto; padding:0 20px; }
+  .section { display:none; }
+  .section.active { display:block; }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+  .stat-card { background:var(--white); border:1px solid var(--border); border-radius:6px; padding:20px 24px; display:flex; align-items:center; gap:16px; }
+  .stat-icon { width:48px; height:48px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:700; flex-shrink:0; color:var(--white); }
+  .stat-icon.blue { background:var(--blue); }
+  .stat-icon.green { background:var(--green); }
+  .stat-icon.orange { background:#E65100; }
+  .stat-num { font-size:1.9rem; font-weight:700; color:var(--gray-900); line-height:1; }
+  .stat-label { font-size:.82rem; color:var(--gray-400); margin-top:3px; text-transform:uppercase; letter-spacing:.5px; }
+  .panel { background:var(--white); border:1px solid var(--border); border-radius:6px; margin-bottom:20px; }
+  .panel-head { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .panel-head h2 { font-size:1rem; font-weight:700; color:var(--gray-900); }
+  .panel-body { padding:20px; }
+  .form-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group.full { grid-column:span 2; }
+  label { font-size:.8rem; font-weight:600; color:var(--gray-700); text-transform:uppercase; letter-spacing:.4px; }
+  input, select { padding:9px 12px; border:1px solid var(--border); border-radius:4px; font-family:inherit; font-size:.92rem; color:var(--gray-900); background:var(--white); transition:border-color .2s; }
+  input:focus, select:focus { outline:none; border-color:var(--blue); }
+  .form-actions { margin-top:16px; }
+  .btn { padding:9px 20px; border:none; border-radius:4px; cursor:pointer; font-family:inherit; font-size:.88rem; font-weight:600; transition:background .2s; }
+  .btn-blue { background:var(--blue); color:var(--white); }
+  .btn-blue:hover { background:#0D47A1; }
+  table { width:100%; border-collapse:collapse; }
+  thead tr { border-bottom:2px solid var(--border); }
+  th { padding:10px 14px; text-align:left; font-size:.78rem; text-transform:uppercase; letter-spacing:.5px; color:var(--gray-400); font-weight:600; }
+  td { padding:11px 14px; border-bottom:1px solid var(--gray-200); font-size:.88rem; color:var(--gray-700); }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover td { background:var(--gray-100); }
+  .badge { padding:3px 10px; border-radius:3px; font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.3px; }
+  .badge-pendiente { background:#FFF8E1; color:#F57F17; border:1px solid #FFE082; }
+  .badge-confirmada { background:var(--green-light); color:var(--green); border:1px solid #A5D6A7; }
+  .badge-cancelada { background:#FFEBEE; color:var(--red); border:1px solid #EF9A9A; }
+  .alert { padding:10px 14px; border-radius:4px; font-size:.88rem; margin-top:12px; }
+  .alert-ok { background:var(--green-light); color:var(--green); border:1px solid #A5D6A7; }
+  .alert-err { background:#FFEBEE; color:var(--red); border:1px solid #EF9A9A; }
+  .health-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .health-item { background:var(--gray-100); border:1px solid var(--border); border-radius:4px; padding:12px 16px; }
+  .health-item .key { font-size:.75rem; text-transform:uppercase; letter-spacing:.4px; color:var(--gray-400); }
+  .health-item .val { font-size:1rem; font-weight:600; color:var(--gray-900); margin-top:3px; }
+  .empty { padding:32px; text-align:center; color:var(--gray-400); font-size:.9rem; }
+  footer { text-align:center; padding:20px; font-size:.78rem; color:var(--gray-400); border-top:1px solid var(--border); background:var(--white); margin-top:40px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="cross"></div>
+    <h1>Clinica San Rafael <span>Sistema de Gestion Medica</span></h1>
+  </div>
+  <div id="api-badge">Conectando...</div>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab(this,'dashboard')">Dashboard</button>
+  <button onclick="showTab(this,'doctors')">Doctores</button>
+  <button onclick="showTab(this,'patients')">Pacientes</button>
+  <button onclick="showTab(this,'appointments')">Citas</button>
+</nav>
+
+<div class="container">
+
+  <div class="section active" id="dashboard">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-icon blue">DR</div>
+        <div><div class="stat-num" id="cnt-doc">—</div><div class="stat-label">Doctores</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">PAC</div>
+        <div><div class="stat-num" id="cnt-pat">—</div><div class="stat-label">Pacientes</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">CIT</div>
+        <div><div class="stat-num" id="cnt-apt">—</div><div class="stat-label">Citas</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Estado del Sistema</h2></div>
+      <div class="panel-body">
+        <div class="health-grid" id="health-grid"><p class="empty">Cargando...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="doctors">
+    <div class="panel">
+      <div class="panel-head"><h2>Registrar Doctor</h2></div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre completo</label><input id="d-name" placeholder="Dr. Juan Perez"></div>
+          <div class="form-group"><label>Especialidad</label><input id="d-spec" placeholder="Cardiologia"></div>
+          <div class="form-group"><label>Telefono</label><input id="d-phone" placeholder="5555-0000"></div>
+          <div class="form-group"><label>Email</label><input id="d-email" type="email" placeholder="doctor@clinica.com"></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-blue" onclick="addDoctor()">Guardar Doctor</button></div>
+        <div id="d-msg"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Directorio de Doctores</h2></div>
+      <div class="panel-body" id="d-list"><p class="empty">Cargando...</p></div>
+    </div>
+  </div>
+
+  <div class="section" id="patients">
+    <div class="panel">
+      <div class="panel-head"><h2>Registrar Paciente</h2></div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre completo</label><input id="p-name" placeholder="Maria Garcia"></div>
+          <div class="form-group"><label>Edad</label><input id="p-age" type="number" placeholder="30"></div>
+          <div class="form-group"><label>Telefono</label><input id="p-phone" placeholder="5555-1111"></div>
+          <div class="form-group"><label>Email</label><input id="p-email" type="email" placeholder="paciente@email.com"></div>
+          <div class="form-group full"><label>Direccion</label><input id="p-addr" placeholder="Zona 10, Ciudad de Guatemala"></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-blue" onclick="addPatient()">Guardar Paciente</button></div>
+        <div id="p-msg"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Registro de Pacientes</h2></div>
+      <div class="panel-body" id="p-list"><p class="empty">Cargando...</p></div>
+    </div>
+  </div>
+
+  <div class="section" id="appointments">
+    <div class="panel">
+      <div class="panel-head"><h2>Agendar Cita</h2></div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Paciente</label><select id="a-pat"></select></div>
+          <div class="form-group"><label>Doctor</label><select id="a-doc"></select></div>
+          <div class="form-group"><label>Fecha y hora</label><input id="a-date" type="datetime-local"></div>
+          <div class="form-group"><label>Notas</label><input id="a-notes" placeholder="Motivo de consulta"></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-blue" onclick="addAppointment()">Agendar Cita</button></div>
+        <div id="a-msg"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Agenda de Citas</h2></div>
+      <div class="panel-body" id="a-list"><p class="empty">Cargando...</p></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Clinica San Rafael &nbsp;|&nbsp; Sistema de Gestion Medica &nbsp;|&nbsp; https://clinica-medica.mooo.com</footer>
+
+<script>
+const API = 'https://clinica-medica.mooo.com';
+const get = p => fetch(API+p,{headers:{'Content-Type':'application/json'}}).then(r=>r.json());
+const post = (p,b) => fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(r=>r.json());
+
+function showTab(btn, id) {
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id).classList.add('active');
+  if(id==='doctors') loadDoctors();
+  if(id==='patients') loadPatients();
+  if(id==='appointments'){loadAppointments();loadSelects();}
+}
+
+async function loadDashboard(){
+  try{
+    const [d,p,a,h] = await Promise.all([get('/api/doctors'),get('/api/patients'),get('/api/appointments'),get('/health')]);
+    document.getElementById('cnt-doc').textContent = d.data?.length??0;
+    document.getElementById('cnt-pat').textContent = p.data?.length??0;
+    document.getElementById('cnt-apt').textContent = a.data?.length??0;
+    document.getElementById('api-badge').textContent = 'Sistema activo';
+    document.getElementById('api-badge').style.background='rgba(46,125,50,.3)';
+    document.getElementById('health-grid').innerHTML = `
+      <div class="health-item"><div class="key">Estado</div><div class="val" style="color:var(--green)">${h.status}</div></div>
+      <div class="health-item"><div class="key">Servicio</div><div class="val">${h.service}</div></div>
+      <div class="health-item"><div class="key">Uptime</div><div class="val">${Math.floor(h.uptime/60)} min ${Math.floor(h.uptime%60)} seg</div></div>
+      <div class="health-item"><div class="key">Timestamp</div><div class="val">${new Date(h.timestamp).toLocaleString('es-GT')}</div></div>`;
+  }catch(e){
+    document.getElementById('api-badge').textContent='Sin conexion';
+    document.getElementById('api-badge').style.background='rgba(198,40,40,.3)';
+  }
+}
+
+async function loadDoctors(){
+  const r = await get('/api/doctors');
+  const el = document.getElementById('d-list');
+  if(!r.data?.length){el.innerHTML='<p class="empty">No hay doctores registrados.</p>';return;}
+  el.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>Nombre</th><th>Especialidad</th><th>Telefono</th><th>Email</th></tr></thead>
+    <tbody>${r.data.map(d=>`<tr><td>${d.id}</td><td><strong>${d.name}</strong></td><td>${d.specialty}</td><td>${d.phone||'—'}</td><td>${d.email||'—'}</td></tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+async function loadPatients(){
+  const r = await get('/api/patients');
+  const el = document.getElementById('p-list');
+  if(!r.data?.length){el.innerHTML='<p class="empty">No hay pacientes registrados.</p>';return;}
+  el.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>Nombre</th><th>Edad</th><th>Telefono</th><th>Direccion</th></tr></thead>
+    <tbody>${r.data.map(p=>`<tr><td>${p.id}</td><td><strong>${p.name}</strong></td><td>${p.age} años</td><td>${p.phone||'—'}</td><td>${p.address||'—'}</td></tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+async function loadAppointments(){
+  const r = await get('/api/appointments');
+  const el = document.getElementById('a-list');
+  if(!r.data?.length){el.innerHTML='<p class="empty">No hay citas registradas.</p>';return;}
+  el.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>Paciente</th><th>Doctor</th><th>Especialidad</th><th>Fecha</th><th>Estado</th></tr></thead>
+    <tbody>${r.data.map(a=>`<tr>
+      <td>${a.id}</td><td><strong>${a.patient_name}</strong></td><td>${a.doctor_name}</td>
+      <td>${a.doctor_specialty}</td>
+      <td>${new Date(a.appointment_date).toLocaleString('es-GT')}</td>
+      <td><span class="badge badge-${a.status}">${a.status}</span></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+async function loadSelects(){
+  const [d,p] = await Promise.all([get('/api/doctors'),get('/api/patients')]);
+  document.getElementById('a-doc').innerHTML = d.data?.map(x=>`<option value="${x.id}">${x.name} — ${x.specialty}</option>`).join('')||'<option>Sin doctores</option>';
+  document.getElementById('a-pat').innerHTML = p.data?.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')||'<option>Sin pacientes</option>';
+}
+
+async function addDoctor(){
+  const b={name:document.getElementById('d-name').value,specialty:document.getElementById('d-spec').value,phone:document.getElementById('d-phone').value,email:document.getElementById('d-email').value};
+  const r=await post('/api/doctors',b);
+  document.getElementById('d-msg').innerHTML=r.success?'<div class="alert alert-ok">Doctor registrado correctamente.</div>':'<div class="alert alert-err">Error al registrar.</div>';
+  if(r.success)loadDoctors();
+}
+
+async function addPatient(){
+  const b={name:document.getElementById('p-name').value,age:+document.getElementById('p-age').value,phone:document.getElementById('p-phone').value,email:document.getElementById('p-email').value,address:document.getElementById('p-addr').value};
+  const r=await post('/api/patients',b);
+  document.getElementById('p-msg').innerHTML=r.success?'<div class="alert alert-ok">Paciente registrado correctamente.</div>':'<div class="alert alert-err">Error al registrar.</div>';
+  if(r.success)loadPatients();
+}
+
+async function addAppointment(){
+  const b={patient_id:+document.getElementById('a-pat').value,doctor_id:+document.getElementById('a-doc').value,appointment_date:document.getElementById('a-date').value,notes:document.getElementById('a-notes').value};
+  const r=await post('/api/appointments',b);
+  document.getElementById('a-msg').innerHTML=r.success?'<div class="alert alert-ok">Cita agendada correctamente.</div>':'<div class="alert alert-err">Error al agendar.</div>';
+  if(r.success)loadAppointments();
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
+HTMLEOF
