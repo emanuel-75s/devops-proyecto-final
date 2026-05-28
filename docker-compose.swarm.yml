@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   app:
     image: emanuelsalama75/clinica-medica-api:latest
@@ -15,8 +16,13 @@ services:
       - clinica_network
     deploy:
       replicas: 2
+      placement:
+        constraints:
+          - node.hostname == ip-172-31-39-9
       restart_policy:
         condition: on-failure
+        delay: 15s
+
   postgres:
     image: postgres:15-alpine
     environment:
@@ -29,8 +35,12 @@ services:
       - clinica_network
     deploy:
       replicas: 1
+      placement:
+        constraints:
+          - node.hostname == ip-172-31-39-9
       restart_policy:
         condition: on-failure
+
   nginx:
     image: nginx:alpine
     ports:
@@ -39,10 +49,15 @@ services:
       - clinica_network
     deploy:
       replicas: 1
+      placement:
+        constraints:
+          - node.hostname == ip-172-31-39-9
       restart_policy:
         condition: on-failure
+
 networks:
   clinica_network:
     driver: overlay
+
 volumes:
   postgres_data:
