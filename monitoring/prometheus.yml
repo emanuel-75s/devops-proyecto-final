@@ -1,14 +1,16 @@
 global:
-  scrape_interval:     15s
-  evaluation_interval: 15s
+  scrape_interval: 15s
 
 scrape_configs:
-
   - job_name: 'clinica-api'
     static_configs:
-      - targets: ['app:3000']
+      - targets: ['172.31.39.9:3000']
     metrics_path: '/metrics'
 
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['172.31.39.9:9100']
