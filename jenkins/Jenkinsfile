@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'emanuelsalama75/clinica-medica-api:latest'
+        SWARM_MANAGER = '3.151.151.43'
+    }
+
+    stages {
+        stage('Pull imagen de Docker Hub') {
+            steps {
+                sh 'docker pull ${DOCKER_IMAGE}'
+            }
+        }
+
+        stage('Deploy en Docker Swarm') {
+            steps {
+                sh '''
+                    ssh -o StrictHostKeyChecking=no ubuntu@3.151.151.43 \
+                    "docker service update \
+                        --image emanuelsalama75/clinica-medica-api:latest \
+                        --update-parallelism 1 \
+                        --update-delay 10s \
+                        clinica_app"
+                '''
+            }
+        }
+
+        stage('Verificar deploy') {
+            steps {
+                sh 'ssh -o StrictHostKeyChecking=no ubuntu@3.151.151.43 "docker service ls"'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deploy completado exitosamente'
+        }
+        failure {
+            echo 'Deploy fallido!'
+        }
+    }
+}
